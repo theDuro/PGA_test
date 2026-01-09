@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+pydantic
+pika   # tylko jeśli będziesz łączyć się z RabbitMQ
