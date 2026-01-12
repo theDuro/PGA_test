@@ -1,56 +1,89 @@
+import socket
 import json
-import numpy as np
 import pika
-import joblib
+import os
+import time
 
-# 1️⃣ Wczytaj wytrenowany model
-model = joblib.load("model.joblib")
-print("Model załadowany")
+# Konfiguracja
+TCP_IP = '0.0.0.0'
+TCP_PORT = int(os.getenv("TCP_PORT", 9000))
+BUFFER_SIZE = 4096
 
-# 2️⃣ Połącz się z RabbitMQ
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host="rabbitmq")  # host RabbitMQ (w Docker Compose 'rabbitmq')
-)
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
+RABBIT_QUEUE = 'tcp_input'
+
+# Retry connection do RabbitMQ
+def connect_rabbitmq(max_retries=10):
+    for i in range(max_retries):
+        try:
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(host=RABBITMQ_HOST)
+            )
+            print(f"✅ Połączono z RabbitMQ: {RABBITMQ_HOST}")
+            return connection
+        except Exception as e:
+            print(f"❌ Próba {i+1}/{max_retries} - Błąd: {e}")
+            time.sleep(5)
+    raise Exception("Nie udało się połączyć z RabbitMQ")
+
+# Połączenie z RabbitMQ
+connection = connect_rabbitmq()
 channel = connection.channel()
+channel.queue_declare(queue=RABBIT_QUEUE, durable=True)
+print(f"✅ Kolejka '{RABBIT_QUEUE}' gotowa")
 
-# 3️⃣ Utwórz kolejki (jeśli nie istnieją)
-channel.queue_declare(queue="ml_input")
-channel.queue_declare(queue="ml_output")
-
-print("Czekam na dane z RabbitMQ...")
-
-# 4️⃣ Funkcja obsługi wiadomości
-def callback(ch, method, properties, body):
+# Obsługa klienta TCP
+def handle_client(conn, addr):
     try:
-        # Odbiór danych
-        data = json.loads(body)
-        x = np.array(data["input"], dtype=np.float32).reshape(1, 6)
-
-        # Predykcja modelu
-        y = model.predict(x)[0].tolist()
-
-        # Wysyłka wyniku do kolejki wyjściowej
+        print(f"📥 Połączono z: {addr}")
+        data = conn.recv(BUFFER_SIZE)
+        
+        if not data:
+            conn.close()
+            return
+        
+        # Dekodowanie JSON z TCP
+        tcp_data = json.loads(data.decode("utf-8"))
+        print(f"📦 Odebrano TCP: {tcp_data}")
+        
+        # Wysłanie do RabbitMQ
         channel.basic_publish(
-            exchange="",
-            routing_key="ml_output",
-            body=json.dumps({"output": y})
+            exchange='',
+            routing_key=RABBIT_QUEUE,
+            body=json.dumps(tcp_data),
+            properties=pika.BasicProperties(delivery_mode=2)
         )
-
-        print("IN :", data["input"])
-        print("OUT:", y)
-
-        # Potwierdzenie obsługi wiadomości
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-
+        print(f"✅ Wysłano do RabbitMQ: {tcp_data}")
+        
+        # Odpowiedź ACK
+        ack = {"status": "ok", "message": "Data received"}
+        conn.send(json.dumps(ack).encode("utf-8"))
+        
+    except json.JSONDecodeError as e:
+        error = {"error": "Invalid JSON", "details": str(e)}
+        conn.send(json.dumps(error).encode("utf-8"))
+        print(f"❌ Błąd JSON: {e}")
+        
     except Exception as e:
-        print("BŁĄD:", e)
-        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+        error = {"error": str(e)}
+        conn.send(json.dumps(error).encode("utf-8"))
+        print(f"❌ Błąd: {e}")
+        
+    finally:
+        conn.close()
+        print(f"❌ Rozłączono: {addr}")
 
-# 5️⃣ Konsumowanie wiadomości
-channel.basic_consume(
-    queue="ml_input",
-    on_message_callback=callback
-)
+# Start serwera TCP
+def start_tcp_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((TCP_IP, TCP_PORT))
+    server.listen(5)
+    print(f"🚀 Serwer TCP uruchomiony: {TCP_IP}:{TCP_PORT}")
+    
+    while True:
+        conn, addr = server.accept()
+        handle_client(conn, addr)
 
-# 6️⃣ Start nasłuchiwania
-channel.start_consuming()
+if __name__ == "__main__":
+    start_tcp_server()

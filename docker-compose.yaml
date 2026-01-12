@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # RabbitMQ - broker komunikacji
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: pga_rabbitmq
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pga_network
+
+  # PostgreSQL - baza danych
+  postgres:
+    image: postgres:15
+    container_name: pga_database
+    environment:
+      POSTGRES_USER: pgauser
+      POSTGRES_PASSWORD: pgapass
+      POSTGRES_DB: pga_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgauser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pga_network
+
+  # AI Service - model ML
+  pga_ai:
+    build:
+      context: ./PGA_AI
+      dockerfile: Dockerfile
+    container_name: pga_ai
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    restart: unless-stopped
+    networks:
+      - pga_network
+
+  # Core API - FastAPI + SSE
+  pga_core:
+    build:
+      context: ./PGA_DATACON_CORE
+      dockerfile: Dockerfile
+    container_name: pga_core
+    ports:
+      - "8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      DATABASE_URL: postgresql://pgauser:pgapass@postgres:5432/pga_production
+    restart: unless-stopped
+    networks:
+      - pga_network
+
+  # PLC Communication - TCP to RabbitMQ bridge
+  pga_plc_com:
+    build:
+      context: ./PGA_PLC_COM
+      dockerfile: Dockerfile
+    container_name: pga_plc_com
+    ports:
+      - "9000:9000"    # TCP port dla PLC
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      TCP_PORT: 9000
+    restart: unless-stopped
+    networks:
+      - pga_network
+
+networks:
+  pga_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
