@@ -1,10 +1,6 @@
 fastapi
 uvicorn
 pydantic
-pika 
-time
-os
+pika
 numpy
-queue
-threading
-  #
+joblib

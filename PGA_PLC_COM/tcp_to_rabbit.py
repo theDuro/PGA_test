@@ -6,7 +6,7 @@ import time
 
 # Konfiguracja TCP
 TCP_IP = '0.0.0.0'
-TCP_PORT = int(os.getenv("TCP_PORT", 9000))
+TCP_PORT = int(os.getenv("TCP_PORT", 9000)) ## todo plc tcp port lower >5000 !!!
 BUFFER_SIZE = 4096
 
 # Konfiguracja RabbitMQ
