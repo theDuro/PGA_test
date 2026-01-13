@@ -1,4 +1,10 @@
 fastapi
 uvicorn
 pydantic
-pika   # tylko jeśli będziesz łączyć się z RabbitMQ
+pika 
+time
+os
+numpy
+queue
+threading
+  #

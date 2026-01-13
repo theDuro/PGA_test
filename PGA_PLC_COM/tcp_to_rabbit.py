@@ -4,33 +4,42 @@ import pika
 import os
 import time
 
-# Konfiguracja
+# Konfiguracja TCP
 TCP_IP = '0.0.0.0'
 TCP_PORT = int(os.getenv("TCP_PORT", 9000))
 BUFFER_SIZE = 4096
 
+# Konfiguracja RabbitMQ
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
-RABBIT_QUEUE = 'tcp_input'
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "admin")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "admin123")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+RABBIT_OUTPUT_QUEUE = 'output'  # Kolejka docelowa dla SSE / FastAPI
 
 # Retry connection do RabbitMQ
 def connect_rabbitmq(max_retries=10):
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
     for i in range(max_retries):
         try:
             connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=RABBITMQ_HOST)
+                pika.ConnectionParameters(
+                    host=RABBITMQ_HOST,
+                    port=RABBITMQ_PORT,
+                    credentials=credentials
+                )
             )
             print(f"✅ Połączono z RabbitMQ: {RABBITMQ_HOST}")
             return connection
         except Exception as e:
-            print(f"❌ Próba {i+1}/{max_retries} - Błąd: {e}")
+            print(f"❌ Próba {i+1}/{max_retries} - Błąd połączenia: {e}")
             time.sleep(5)
     raise Exception("Nie udało się połączyć z RabbitMQ")
 
 # Połączenie z RabbitMQ
 connection = connect_rabbitmq()
 channel = connection.channel()
-channel.queue_declare(queue=RABBIT_QUEUE, durable=True)
-print(f"✅ Kolejka '{RABBIT_QUEUE}' gotowa")
+channel.queue_declare(queue=RABBIT_OUTPUT_QUEUE, durable=True)
+print(f"✅ Kolejka '{RABBIT_OUTPUT_QUEUE}' gotowa")
 
 # Obsługa klienta TCP
 def handle_client(conn, addr):
@@ -46,16 +55,16 @@ def handle_client(conn, addr):
         tcp_data = json.loads(data.decode("utf-8"))
         print(f"📦 Odebrano TCP: {tcp_data}")
         
-        # Wysłanie do RabbitMQ
+        # Wysłanie do kolejki 'output'
         channel.basic_publish(
             exchange='',
-            routing_key=RABBIT_QUEUE,
+            routing_key=RABBIT_OUTPUT_QUEUE,
             body=json.dumps(tcp_data),
             properties=pika.BasicProperties(delivery_mode=2)
         )
-        print(f"✅ Wysłano do RabbitMQ: {tcp_data}")
+        print(f"✅ Wysłano do RabbitMQ '{RABBIT_OUTPUT_QUEUE}': {tcp_data}")
         
-        # Odpowiedź ACK
+        # Odpowiedź ACK do klienta TCP
         ack = {"status": "ok", "message": "Data received"}
         conn.send(json.dumps(ack).encode("utf-8"))
         
