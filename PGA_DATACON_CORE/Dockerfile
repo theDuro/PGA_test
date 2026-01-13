@@ -2,13 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalacja pika (RabbitMQ client)
-RUN pip install --no-cache-dir pika
+# Kopiowanie plików
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopiowanie skryptu
-COPY tcp_to_rabbit.py .
+COPY . .
 
-# Ekspozycja portu TCP
-EXPOSE 9000
+# Ekspozycja portu FastAPI
+EXPOSE 8000
 
-CMD ["python", "-u", "tcp_to_rabbit.py"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
