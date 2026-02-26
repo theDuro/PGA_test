@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import "./SecondPage.css"; // <- dodany import CSS
 const initialFields = [
   { key: "sheet_width", label: "Sheet width (mm)", value: "" },
   { key: "sheet_thickness", label: "Sheet thickness (mm)", value: "" },
