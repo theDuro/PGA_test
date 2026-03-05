@@ -4,9 +4,6 @@ import "./SecondPage.css"; // <- dodany import CSS
 const initialFields = [
   { key: "sheet_width", label: "Sheet width (mm)", value: "" },
   { key: "sheet_thickness", label: "Sheet thickness (mm)", value: "" },
-  { key: "rolling_force", label: "Rolling force (kN)", value: "" },
-  { key: "motor_power", label: "Motor power (kW)", value: "" },
-  { key: "line_speed", label: "Line speed (m/min)", value: "" },
   { key: "process_time", label: "Process time (s)", value: "" },
 ];
 

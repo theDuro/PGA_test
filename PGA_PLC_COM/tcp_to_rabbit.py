@@ -6,7 +6,7 @@ import time
 
 # Konfiguracja TCP
 TCP_IP = '0.0.0.0'
-TCP_PORT = int(os.getenv("TCP_PORT", 9000)) ## todo plc tcp port lower >5000 !!!
+TCP_PORT = int(os.getenv("TCP_PORT", 4000)) ## todo plc tcp port lower >5000 !!!
 BUFFER_SIZE = 4096
 
 # Konfiguracja RabbitMQ
@@ -96,3 +96,4 @@ def start_tcp_server():
 
 if __name__ == "__main__":
     start_tcp_server()
+   

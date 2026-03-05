@@ -1,23 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import "./HomePage.css"; // import CSS
+import "./HomePage.css";
 
 const HomePage = () => {
   const navigate = useNavigate();
 
   const goToNext = () => navigate("/SecondPage");
-  const test1 = () => alert("Opcja 1");
-  const test2 = () => alert("Opcja 2");
+  const goToErrors = () => navigate("/errors");
+  const goToStatus = () => navigate("/status"); 
 
   return (
     <div className="home">
       <h1>Menu główne</h1>
 
-      {/* Kontener przycisków wyrównany do lewej */}
       <div className="buttons">
-        <Button onClick={test1}>Opcja 1</Button>
-        <Button onClick={test2}>Opcja 2</Button>
-        <Button onClick={goToNext}>Przejdź do drugiego okna</Button>
+        <Button onClick={goToErrors}>Lista błędów</Button>
+        <Button onClick={goToStatus}>Stan</Button>
+        <Button onClick={goToNext}>predykcja</Button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import SecondPage from "./pages/SecondPage";
+import ErrorsPage from "./pages/ErrorsPage";
 import "./App.css";
 
 const App = () => {
@@ -9,6 +10,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/SecondPage" element={<SecondPage />} />
+        <Route path="/errors" element={<ErrorsPage />} />  {/* ← DODAJ TO */}
       </Routes>
     </BrowserRouter>
   );
