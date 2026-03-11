@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import "./ErrorsPage.css";
+import "./StatusPage.css";
 
-const ErrorsPage = () => {
+const StatusPage = () => {
   const [errors, setErrors] = useState([]);
   const navigate = useNavigate();
 
@@ -13,7 +13,6 @@ const ErrorsPage = () => {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
         setErrors((prev) => [data, ...prev]);
       } catch (err) {
         console.error("Błąd parsowania JSON:", err);
@@ -31,15 +30,15 @@ const ErrorsPage = () => {
   }, []);
 
   return (
-    <div className="errors">
-      <h1>Lista błędów</h1>
+    <div className="status">
+      <h1>Status systemu</h1>
 
-      <div className="errors-list">
+      <div className="status-list">
         {errors.length === 0 ? (
           <p>Brak błędów</p>
         ) : (
           errors.map((error, index) => (
-            <div key={index} className="error-card">
+            <div key={index} className="status-card">
               <p><strong>Kod:</strong> {error.code}</p>
               <p><strong>Kontekst:</strong> {error.context}</p>
               <p><strong>ID części:</strong> {error.part_id}</p>
@@ -56,4 +55,4 @@ const ErrorsPage = () => {
   );
 };
 
-export default ErrorsPage;
+export default StatusPage;

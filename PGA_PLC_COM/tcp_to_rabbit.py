@@ -81,7 +81,7 @@ def handle_client(conn, addr):
     finally:
         conn.close()
         print(f"❌ Rozłączono: {addr}")
-
+    
 # Start serwera TCP
 def start_tcp_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
