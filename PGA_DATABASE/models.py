@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 from sqlalchemy.sql import func
 
@@ -27,8 +28,8 @@ DATABASE_URL: str = os.getenv(
 
 engine = create_engine(
     DATABASE_URL,
-    echo=False,          # ustaw True żeby logować zapytania SQL
-    pool_pre_ping=True,  # weryfikuje połączenie przed każdym użyciem
+    echo=False,
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
@@ -50,7 +51,6 @@ class Part(Base):
     id: int = Column(Integer, primary_key=True, autoincrement=True)
     name: str = Column(String(255), nullable=False)
 
-    # relacja jeden-do-wielu → errors
     errors = relationship(
         "Error",
         back_populates="part",
@@ -90,6 +90,22 @@ class Condition(Base):
 
     def __repr__(self) -> str:
         return f"<Condition id={self.id} created_at={self.created_at}>"
+
+
+# ------------------------------------------------------------------ #
+#  ML PREDICTIONS                                                     #
+# ------------------------------------------------------------------ #
+class MlPrediction(Base):
+    __tablename__ = "ml_predictions"
+
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    input = Column(JSONB, nullable=False)
+    output = Column(JSONB, nullable=False)
+    timestamp: str | None = Column(String(64), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    def __repr__(self) -> str:
+        return f"<MlPrediction id={self.id} created_at={self.created_at}>"
 
 
 # ------------------------------------------------------------------ #

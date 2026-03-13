@@ -40,3 +40,13 @@ CREATE TABLE IF NOT EXISTS condition (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+-- ------------------------------------------------------------
+--  ML PREDICTIONS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ml_predictions (
+    id         SERIAL PRIMARY KEY,
+    input      JSONB        NOT NULL,
+    output     JSONB        NOT NULL,
+    timestamp  VARCHAR(64),
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
