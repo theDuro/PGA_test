@@ -15,7 +15,7 @@ const HomePage = () => {
     { partId: 2, x: 20, y: -10, name: "Transporter Łańcuchowy" },
     { partId: 3, x: 50, y: 3, name: "Robot" },
     { partId: 4, x: 75, y: 50, name: "Miejsce odłożenia " },
-    { partId: 6, x: 50, y: 20, name: "Pozycjoner koszy" },
+    { partId: 6, x: 50, y: 20, name: "Chwytack" },
   ];
 
   const handlePartClick = (part) => {

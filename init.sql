@@ -5,6 +5,7 @@
 -- ------------------------------------------------------------
 --  PARTS
 -- ------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS parts (
     id   SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
@@ -15,8 +16,7 @@ INSERT INTO parts (name) VALUES
     ('Transporter łańcuchowy'),
     ('Robot'),
     ('Miejsce odłożenia'),
-    ('Chwytak'),
-    ('Pozycjoner koszy');
+    ('Chwytak');
 
 -- ------------------------------------------------------------
 --  ERRORS  (wiele błędów → jeden part)
